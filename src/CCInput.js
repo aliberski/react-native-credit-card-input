@@ -53,6 +53,10 @@ export default class CCInput extends Component {
     additionalInputProps: {},
   };
 
+  state = {
+    isFocused: false,
+  }
+
   componentWillReceiveProps = newProps => {
     const { status, value, onBecomeEmpty, onBecomeValid, field } = this.props;
     const { status: newStatus, value: newValue } = newProps;
@@ -63,19 +67,32 @@ export default class CCInput extends Component {
 
   focus = () => this.refs.input.focus();
 
-  _onFocus = () => this.props.onFocus(this.props.field);
+  _onFocus = () => {
+    this.setState({ isFocused: true });
+    this.props.onFocus(this.props.field)
+  };
+  _onBlur = () => {
+    this.setState({ isFocused: false });
+  }
   _onChange = value => this.props.onChange(this.props.field, value);
 
   render() {
     const { label, value, placeholder, status, keyboardType,
             containerStyle, inputStyle, labelStyle,
             validColor, invalidColor, placeholderColor,
-            additionalInputProps } = this.props;
+            additionalInputProps, focusedColor } = this.props;
+    const { isFocused } = this.state;
+    const showLabelText = isFocused || value.length > 0;
+
     return (
       <TouchableOpacity onPress={this.focus}
         activeOpacity={0.99}>
         <View style={[containerStyle]}>
-          { !!label && <Text style={[labelStyle]}>{label}</Text>}
+          { !!label && (
+            <Text style={[labelStyle, !showLabelText && {paddingHorizontal: 0}, isFocused && { color: focusedColor }]}>
+              {showLabelText && label}
+            </Text>
+          )}
           <TextInput ref="input"
             {...additionalInputProps}
             keyboardType={keyboardType}
@@ -87,12 +104,14 @@ export default class CCInput extends Component {
               ((validColor && status === "valid") ? { color: validColor } :
               (invalidColor && status === "invalid") ? { color: invalidColor } :
               {}),
+              isFocused && { borderColor: focusedColor }
             ]}
             underlineColorAndroid={"transparent"}
             placeholderTextColor={placeholderColor}
-            placeholder={placeholder}
+            placeholder={isFocused ? '' : placeholder}
             value={value}
             onFocus={this._onFocus}
+            onBlur={this._onBlur}
             onChangeText={this._onChange} />
         </View>
       </TouchableOpacity>
